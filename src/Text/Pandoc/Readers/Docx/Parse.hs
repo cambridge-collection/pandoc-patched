@@ -1266,6 +1266,8 @@ elemToParagraphStyle ns element sty numbering
             Just "center" -> Just JustifyCenter
             Just "left" -> Just JustifyLeft
             Just "right" -> Just JustifyRight
+            Just "end" -> Just JustifyRight
+            Just "start" -> Just JustifyLeft
             _ -> Nothing
       , indentation =
           getIndentation ns element
