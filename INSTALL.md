@@ -193,6 +193,14 @@ To run pandoc using Docker, converting `README.md` to `README.pdf`:
 
     docker run --rm --volume "`pwd`:/data" --user `id -u`:`id -g` pandoc/latex README.md -o README.pdf
 
+This fork also publishes a multi-arch image with the patched binary to
+GitHub Container Registry via `.github/workflows/docker-image.yml`. Once the
+workflow has run, you can pull it at
+`ghcr.io/<your-account>/<your-repo>:latest` and use it just like the upstream
+image:
+
+    docker run --rm --volume "`pwd`:/data" ghcr.io/<your-account>/<your-repo>:latest --version
+
 ## GitHub Actions
 
 Pandoc can be run through
