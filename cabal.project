@@ -20,4 +20,14 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/jgm/typst-hs.git
-  tag: 9b10ff32492304867b6cc410db6e843c2c9b913b
+  tag: b4399d44d38c1935c02db9bfd62fb5a4450ad7af
+
+source-repository-package
+  type: git
+  location: https://github.com/jgm/texmath.git
+  tag: aee6b494595a58dbbf769264061876778f7aa269
+
+source-repository-package
+  type: git
+  location: https://github.com/jgm/djoths.git
+  tag: a6fc625fd58aa39df05dd1d82ee005e681815095

@@ -163,6 +163,7 @@ escapeString context t
   needsEscape '+' = True
   needsEscape '`' = True
   needsEscape '*' = True
+  needsEscape '#' = True
   needsEscape '_' = True
   needsEscape '<' = True
   needsEscape '>' = True
@@ -593,7 +594,9 @@ inlineListToAsciiDoc opts lst = do
                                    _           -> False
        isSpacy Start (Str xs)
          | Just (c, _) <- T.uncons xs = isPunctuation c || isSpace c
-       isSpacy _ _ = True
+       isSpacy End (Link{}) = True
+       isSpacy End (Image{}) = True
+       isSpacy _ _ = False
 
 setIntraword :: PandocMonad m => Bool -> ADW m ()
 setIntraword b = modify $ \st -> st{ intraword = b }
@@ -627,7 +630,9 @@ inlineToAsciiDoc opts (Superscript lst) = do
 inlineToAsciiDoc opts (Subscript lst) = do
   contents <- inlineListToAsciiDoc opts lst
   return $ "~" <> contents <> "~"
-inlineToAsciiDoc opts (SmallCaps lst) = inlineListToAsciiDoc opts lst
+inlineToAsciiDoc opts (SmallCaps lst) = do
+  contents <- inlineListToAsciiDoc opts lst
+  return $ "[smallcaps]#" <> contents <> "#"
 inlineToAsciiDoc opts (Quoted qt lst) = do
   isLegacy <- gets legacy
   contents <- inlineListToAsciiDoc opts lst
