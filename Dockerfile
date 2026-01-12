@@ -16,7 +16,7 @@ RUN apt-get update \
 
 WORKDIR /src
 
-COPY stack.yaml stack.yaml.lock ./
+COPY stack.yaml ./
 COPY pandoc.cabal .
 COPY pandoc-cli/pandoc-cli.cabal pandoc-cli/
 COPY pandoc-server/pandoc-server.cabal pandoc-server/
