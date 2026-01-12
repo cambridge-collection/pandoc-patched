@@ -50,7 +50,7 @@ ENV PANDOC_DATA_DIR=/usr/share/pandoc
 
 COPY --from=builder /opt/pandoc/bin/pandoc /usr/local/bin/pandoc
 COPY --from=builder /opt/pandoc/share /usr/share/pandoc
-COPY docker/pandoc-run.sh /usr/local/bin/pandoc-run
+COPY docker/entrypoint/pandoc-run.sh /usr/local/bin/pandoc-run
 RUN chmod +x /usr/local/bin/pandoc-run
 
 ENTRYPOINT ["/usr/local/bin/pandoc-run"]
