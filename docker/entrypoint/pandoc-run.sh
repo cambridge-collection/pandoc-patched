@@ -64,6 +64,40 @@ map_ext() {
   fi
 }
 
+split_and_expand() {
+  local start="$1"
+  local candidate=""
+  local i before
+
+  if (( start >= ${#tokens[@]} )); then
+    split_result=("${working_matches[@]}")
+    return 0
+  fi
+
+  for (( i=start; i<${#tokens[@]}; i++ )); do
+    if [[ -z "$candidate" ]]; then
+      candidate="${tokens[i]}"
+    else
+      candidate+=" ${tokens[i]}"
+    fi
+
+    if compgen -G "$candidate" > /dev/null; then
+      before=${#working_matches[@]}
+      while IFS=$'\n' read -r match; do
+        working_matches+=("$match")
+      done < <(compgen -G "$candidate")
+
+      if split_and_expand $((i + 1)); then
+        return 0
+      fi
+
+      working_matches=("${working_matches[@]:0:$before}")
+    fi
+  done
+
+  return 1
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --)
@@ -117,17 +151,36 @@ if [[ ${#inputs[@]} -eq 0 ]]; then
   exec pandoc "${pandoc_opts[@]}"
 fi
 
-shopt -s nullglob
 expanded_inputs=()
+tokens=()
 for pattern in "${inputs[@]}"; do
-  matches=( $pattern )
-  if [[ ${#matches[@]} -eq 0 ]]; then
-    echo "No files match pattern: $pattern" >&2
-    exit 1
+  matches=()
+
+  if compgen -G "$pattern" > /dev/null; then
+    while IFS=$'\n' read -r match; do
+      matches+=("$match")
+    done < <(compgen -G "$pattern")
+  else
+    tokens=()
+    read -r -a tokens <<< "$pattern"
+
+    if [[ ${#tokens[@]} -gt 1 ]]; then
+      working_matches=()
+      split_result=()
+      if split_and_expand 0; then
+        matches=("${split_result[@]}")
+      else
+        echo "No files match pattern: $pattern" >&2
+        exit 1
+      fi
+    else
+      echo "No files match pattern: $pattern" >&2
+      exit 1
+    fi
   fi
+
   expanded_inputs+=("${matches[@]}")
 done
-shopt -u nullglob
 
 inputs=("${expanded_inputs[@]}")
 
