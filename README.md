@@ -285,6 +285,12 @@ contains some [examples of the use of
 pandoc](https://pandoc.org/demos.html) and a limited [online
 demo](https://pandoc.org/try).
 
+## Cambridge Collection Patched-specific documentation
+
+See
+[Cambridge collection patched workflow](doc/cambridge-collection-patched-workflow.md)
+for the changes to the Pandoc docx conversion functionality and its Docker-based workflow.
+
 ## Contributing
 
 Pull requests, bug reports, and feature requests are welcome. Please
