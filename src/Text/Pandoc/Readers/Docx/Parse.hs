@@ -238,9 +238,6 @@ data ChangeInfo = ChangeInfo ChangeId Author (Maybe ChangeDate)
 data TrackedChange = TrackedChange ChangeType ChangeInfo
                    deriving Show
 
-data Justification = JustifyBoth | JustifyLeft | JustifyRight | JustifyCenter
-  deriving (Show, Eq)
-
 data ParagraphStyle = ParagraphStyle { pStyle        :: [ParStyle]
                                      , indentation   :: Maybe ParIndentation
                                      , justification :: Maybe Justification
@@ -484,6 +481,7 @@ constructBogusParStyleData stName = ParStyle
   { headingLev = Nothing
   , indent = Nothing
   , numInfo = Nothing
+  , pJustification = Nothing
   , psParentStyle = Nothing
   , pStyleName = stName
   , pStyleId = ParaStyleId . T.filter (/=' ') . fromStyleName $ stName
@@ -1266,15 +1264,8 @@ elemToParagraphStyle ns element sty numbering
           Just (numId, lvl) -> isJust $ lookupLevel numId lvl numbering
           Nothing -> isJust $ getParStyleField numInfo pStyle'
       , justification =
-          case findChildByName ns "w" "jc" pPr >>= findAttrByName ns "w" "val" of
-            Nothing -> Nothing
-            Just "both" -> Just JustifyBoth
-            Just "center" -> Just JustifyCenter
-            Just "left" -> Just JustifyLeft
-            Just "right" -> Just JustifyRight
-            Just "end" -> Just JustifyRight
-            Just "start" -> Just JustifyLeft
-            _ -> Nothing
+          getJustification ns element <|>
+          listToMaybe (mapMaybe inheritedJustification pStyle')
       , indentation =
           getIndentation ns element
       , dropCap =

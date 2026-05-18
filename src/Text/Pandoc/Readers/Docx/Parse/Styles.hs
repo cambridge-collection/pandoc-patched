@@ -29,6 +29,7 @@ module Text.Pandoc.Readers.Docx.Parse.Styles (
   , CharStyleName
   , FromStyleName
   , VertAlign(..)
+  , Justification(..)
   , StyleId
   , HasStyleId
   , archiveToStyles'
@@ -39,6 +40,8 @@ module Text.Pandoc.Readers.Docx.Parse.Styles (
   , fromStyleId
   , stringToInteger
   , getIndentation
+  , getJustification
+  , inheritedJustification
   , getNumInfo
   , elemToRunStyle
   , defaultRunStyle
@@ -98,6 +101,9 @@ instance Ord CIString where
 data VertAlign = BaseLn | SupScrpt | SubScrpt
                deriving Show
 
+data Justification = JustifyBoth | JustifyLeft | JustifyRight | JustifyCenter
+  deriving (Show, Eq)
+
 data CharStyle = CharStyle { cStyleId   :: CharStyleId
                            , cStyleName :: CharStyleName
                            , cStyleData :: RunStyle
@@ -123,12 +129,13 @@ data ParIndentation = ParIndentation { leftParIndent    :: Maybe Integer
                                      , hangingParIndent :: Maybe Integer}
                       deriving Show
 
-data ParStyle = ParStyle { headingLev    :: Maybe (ParaStyleName, Int)
-                         , indent        :: Maybe ParIndentation
-                         , numInfo       :: Maybe (T.Text, T.Text)
-                         , psParentStyle :: Maybe ParStyle
-                         , pStyleName    :: ParaStyleName
-                         , pStyleId      :: ParaStyleId
+data ParStyle = ParStyle { headingLev     :: Maybe (ParaStyleName, Int)
+                         , indent         :: Maybe ParIndentation
+                         , numInfo        :: Maybe (T.Text, T.Text)
+                         , pJustification :: Maybe Justification
+                         , psParentStyle  :: Maybe ParStyle
+                         , pStyleName     :: ParaStyleName
+                         , pStyleId       :: ParaStyleId
                          }
                     deriving Show
 
@@ -319,6 +326,26 @@ getIndentation ns el = do
                          stringToInteger
     }
 
+-- | Read a @\<w:jc\>@ child of the given @\<w:pPr\>@-bearing element
+-- (either a paragraph or a paragraph-style definition).
+getJustification :: NameSpaces -> Element -> Maybe Justification
+getJustification ns el = do
+  pPr <- findChildByName ns "w" "pPr" el
+  val <- findChildByName ns "w" "jc" pPr >>= findAttrByName ns "w" "val"
+  case val of
+    "both"   -> Just JustifyBoth
+    "center" -> Just JustifyCenter
+    "left"   -> Just JustifyLeft
+    "right"  -> Just JustifyRight
+    "end"    -> Just JustifyRight
+    "start"  -> Just JustifyLeft
+    _        -> Nothing
+
+-- | Find the nearest justification by walking the @basedOn@ chain.
+inheritedJustification :: ParStyle -> Maybe Justification
+inheritedJustification ps =
+  pJustification ps <|> (psParentStyle ps >>= inheritedJustification)
+
 getElementStyleName :: Coercible T.Text a => NameSpaces -> Element -> Maybe a
 getElementStyleName ns el = coerce <$>
   ((findChildByName ns "w" "name" el >>= findAttrByName ns "w" "val")
@@ -345,6 +372,7 @@ elemToParStyleData ns element parentStyle
         headingLev = getHeaderLevel ns element
       , indent = getIndentation ns element
       , numInfo = getNumInfo ns element
+      , pJustification = getJustification ns element
       , psParentStyle = parentStyle
       , pStyleName = styleName
       , pStyleId = ParaStyleId styleId
