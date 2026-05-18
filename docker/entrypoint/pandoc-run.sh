@@ -6,6 +6,7 @@ pandoc_opts=()
 inputs=()
 output_override=""
 target_ext=""
+media_root=""
 
 map_ext() {
   local fmt="$1"
@@ -103,6 +104,19 @@ while [[ $# -gt 0 ]]; do
       pandoc_opts+=("${1%%=*}" "$val")
       shift
       ;;
+    --extract-media)
+      shift
+      if [[ $# -eq 0 ]]; then
+        echo "--extract-media requires a value" >&2
+        exit 1
+      fi
+      media_root="$1"
+      shift
+      ;;
+    --extract-media=*)
+      media_root="${1#*=}"
+      shift
+      ;;
     -*)
       pandoc_opts+=("$1")
       shift
@@ -115,6 +129,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ ${#inputs[@]} -eq 0 ]]; then
+  if [[ -n "$media_root" ]]; then
+    pandoc_opts+=(--extract-media "$media_root")
+  fi
   exec pandoc "${pandoc_opts[@]}"
 fi
 
@@ -137,14 +154,21 @@ fi
 
 ext="$(map_ext "${target_ext:-html}")"
 
+if [[ -z "$media_root" ]]; then
+  media_root="/data/media"
+fi
+
 for src in "${inputs[@]}"; do
+  base="$(basename "$src")"
+  base="${base%.*}"
+
   out="$output_override"
   if [[ -z "$out" ]]; then
-    base="$(basename "$src")"
-    base="${base%.*}"
     out="/data/${base}.${ext}"
   fi
 
-  echo "Converting $src -> $out"
-  pandoc "${pandoc_opts[@]}" "$src" -o "$out"
+  per_file_media="${media_root}/${base}"
+
+  echo "Converting $src -> $out (media: $per_file_media)"
+  pandoc "${pandoc_opts[@]}" --extract-media="$per_file_media" "$src" -o "$out"
 done

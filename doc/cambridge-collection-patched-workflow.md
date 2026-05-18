@@ -61,3 +61,10 @@ Notes
   to see the passthrough flags.
 - The image ships only the built pandoc binary and data files; host
   `workspace/` content is never baked into the image.
+- Each input document's images are extracted into their own subdirectory
+  so converting multiple files in one invocation does not cause
+  `image1.jpeg`, `image2.jpeg`, ... to overwrite each other. If
+  `--extract-media=DIR` is passed when invoking a run, its value is
+  treated as a parent directory and each document writes to
+  `DIR/<basename>/` (e.g. `media/sample/image1.jpeg` for `sample.docx`).
+  If `--extract-media` is omitted, the parent defaults to `/data/media`.
